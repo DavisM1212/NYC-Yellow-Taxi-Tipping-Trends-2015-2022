@@ -10,12 +10,13 @@ from branca.colormap import linear
 # Load per-year CSVs
 # -----------------------------------------------------------------------------
 YEARS = list(range(2015, 2023))
-paths = {y: f"./Data/heat_{y}.csv" for y in YEARS}
+paths = {y: f"./heatmaps/heat_{y}.csv" for y in YEARS}
 
 gdfs = {}
 for y in YEARS:
     df = pd.read_csv(paths[y])
     gdf = gpd.GeoDataFrame(df, geometry=df["wkt"].apply(wkt.loads), crs="EPSG:4326")
+    count_col = "num_trips" if "num_trips" in gdf.columns else "num_tips"
 
     gdf["year"] = y
 
@@ -29,7 +30,7 @@ for y in YEARS:
     gdf["avg_rate_s"] = gdf["avg_rate"].map(
         lambda v: f"{v:.1f}%" if pd.notnull(v) else "—"
     )
-    gdf["num_tips_s"] = gdf["num_tips"].map(
+    gdf["num_trips_s"] = gdf[count_col].map(
         lambda v: f"{int(v):,}" if pd.notnull(v) else "—"
     )
 
@@ -46,7 +47,7 @@ for y in YEARS:
             <div><strong>Avg tip:</strong> {row['avg_tip_s']}</div>
             <div><strong>Median tip:</strong> {row['med_tip_s']}</div>
             <div><strong>Tip rate:</strong> {row['avg_rate_s']}</div>
-            <div><strong>Trips:</strong> {row['num_tips_s']}</div>
+            <div><strong>Trips:</strong> {row['num_trips_s']}</div>
           </div>
         </div>
         """
@@ -654,6 +655,6 @@ m.get_root().html.add_child(folium.Element(title_html))
 
 # Save and open
 # -----------------------------------------------------------------------------
-out = os.path.abspath("index.html")
+out = os.path.abspath("tips_map_slim.html")
 m.save(out)
 webbrowser.open(f"file://{out}")
